@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 3
+  tags: []
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - 
+  - Water
+  - UI
+  - Projectile
+  - Enemy
+  - Walls
+  - Ground
+  - Destructable
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  - name: Background
+    uniqueID: 2821510699
+    locked: 0
+  - name: Ground
+    uniqueID: 2131748657
+    locked: 0
+  - name: Walls
+    uniqueID: 1205820095
+    locked: 0
+  - name: Farm
+    uniqueID: 260091377
+    locked: 0
+  - name: Character
+    uniqueID: 499825027
+    locked: 0
+  - name: Foreground
+    uniqueID: 2193085355
+    locked: 0
+  m_RenderingLayers:
+  - Default
