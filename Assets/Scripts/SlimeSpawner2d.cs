@@ -28,18 +28,29 @@ public class SlimeSpawner2D : MonoBehaviour
     private float startDelay = 0f;
 
     [Header("Placement Safety")]
-    [SerializeField, Tooltip("Clear radius around spawn point that must be free of colliders.")]
+    [SerializeField, Tooltip("Clear radius around spawn point that must be free of colliders (e.g., walls/props/players).")]
     private float spawnClearRadius = 0.35f;
 
     [SerializeField, Tooltip("Layers considered blocking for spawn clearance.")]
     private LayerMask preventSpawnMask = ~0;
 
-    [SerializeField, Tooltip("Attempts to find a clear point per slime.")]
+    [SerializeField, Tooltip("Attempts to find a valid point per slime before giving up this wave slot.")]
     private int maxPointAttempts = 16;
+
+    [Header("Ground Check")]
+    [SerializeField, Tooltip("Require the spawn point to sit on a Ground layer collider (e.g., TilemapCollider2D).")]
+    private bool requireGround = true;
+
+    [SerializeField, Tooltip("Layers that count as valid ground (e.g., 'Ground').")]
+    private LayerMask groundMask = 0;
+
+    [SerializeField, Tooltip("Overlap circle radius used to test that the point lies on ground.")]
+    private float groundCheckRadius = 0.1f;
 
     [Header("Parenting (optional)")]
     [SerializeField, Tooltip("If true, parent spawned slimes (but keep world pose).")]
     private bool parentSpawned = false;
+
     [SerializeField, Tooltip("Parent to use if parentSpawned is true; if null, uses this spawner transform.")]
     private Transform spawnedParentOverride;
 
@@ -55,7 +66,7 @@ public class SlimeSpawner2D : MonoBehaviour
     private Coroutine _runner;
     private Collider2D _col;
 
-    // We track alive slimes without parenting
+    // Track alive slimes without parenting dependency
     private readonly List<GameObject> _alive = new List<GameObject>();
 
     void Awake()
@@ -99,7 +110,7 @@ public class SlimeSpawner2D : MonoBehaviour
                         var go = Instantiate(slimePrefab, pos, Quaternion.identity);
                         _alive.Add(go);
 
-                        // Add a token so we get notified when it dies
+                        // Track life without relying on parenting
                         var token = go.AddComponent<SpawnedToken>();
                         token.owner = this;
 
@@ -147,15 +158,26 @@ public class SlimeSpawner2D : MonoBehaviour
                 p = transform.TransformPoint(localRectPoint);
             }
 
+            // Must be on ground?
+            if (requireGround)
+            {
+                // If the ground is a TilemapCollider2D (or any collider), this will succeed when the point lies over it.
+                // Use a small radius to be robust against tile boundaries.
+                var groundHit = Physics2D.OverlapCircle(p, groundCheckRadius, groundMask);
+                if (groundHit == null)
+                    continue; // not on ground → try again
+            }
+
+            // Must be clear of blocking colliders?
             if (spawnClearRadius > 0f && Physics2D.OverlapCircle(p, spawnClearRadius, preventSpawnMask))
-                continue;
+                continue; // blocked → try again
 
             world = p;
             return true;
         }
 
         world = default;
-        return false;
+        return false; // no valid point found this time
     }
 
     // -------------------- Health --------------------
@@ -224,6 +246,13 @@ public class SlimeSpawner2D : MonoBehaviour
         Gizmos.color = areaOutline;
         Gizmos.DrawLine(a, b); Gizmos.DrawLine(b, d);
         Gizmos.DrawLine(d, e); Gizmos.DrawLine(e, a);
+
+        // Ground check radius preview (center only, for reference)
+        if (requireGround)
+        {
+            Gizmos.color = new Color(0.2f, 0.8f, 1f, 0.9f);
+            Gizmos.DrawWireSphere(transform.position, groundCheckRadius);
+        }
     }
 
     // Helper component to track despawn without parenting
@@ -233,7 +262,6 @@ public class SlimeSpawner2D : MonoBehaviour
         void OnDestroy()
         {
             if (!owner) return;
-            // Remove nulls; owner will clean up on next loop too
             owner._alive.Remove(gameObject);
         }
     }
