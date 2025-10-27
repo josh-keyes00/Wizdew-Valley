@@ -223,6 +223,7 @@ public class Slime : MonoBehaviour
     private void Die()
     {
         onDeath?.Invoke();
+        KillCounter.Instance?.RegisterKill("Slime");
         Destroy(gameObject);
     }
 
