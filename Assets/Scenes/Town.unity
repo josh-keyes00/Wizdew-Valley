@@ -8076,6 +8076,18 @@ PrefabInstance:
       propertyPath: m_NormalizedViewPortRect.height
       value: 0.33014488
       objectReference: {fileID: 0}
+    - target: {fileID: 7090169900756368155, guid: e0efea75d129ddb429c343733a763f53, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7090169900756368155, guid: e0efea75d129ddb429c343733a763f53, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 7090169900756368155, guid: e0efea75d129ddb429c343733a763f53, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7398392886536147404, guid: e0efea75d129ddb429c343733a763f53, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
