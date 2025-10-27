@@ -61,7 +61,33 @@ public class Shopkeeper : MonoBehaviour
 
         if (_ui == null)
         {
+            // Instantiate
             var go = Instantiate(shopUIPrefab);
+
+            // Ensure it's inside a Canvas
+            var canvas = go.GetComponentInParent<Canvas>();
+            if (canvas == null)
+            {
+                var targetCanvas = FindObjectOfType<Canvas>();
+                if (targetCanvas != null)
+                    go.transform.SetParent(targetCanvas.transform, worldPositionStays: false);
+                else
+                    Debug.LogWarning("No Canvas found. Consider putting a Canvas on the ShopUI prefab.", go);
+            }
+
+            // Reset/Stretch the RectTransform so it fills the screen
+            var rt = go.GetComponent<RectTransform>();
+            if (rt != null)
+            {
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.anchoredPosition = Vector2.zero;
+                rt.offsetMin = Vector2.zero;  // left/bottom
+                rt.offsetMax = Vector2.zero;  // right/top
+                rt.localScale = Vector3.one;
+            }
+
             _ui = go.GetComponent<ShopUI>();
             if (_ui == null)
             {
@@ -73,16 +99,5 @@ public class Shopkeeper : MonoBehaviour
 
         if (_ui.IsOpen) _ui.Close();
         else _ui.Open(this, catalog);
-    }
-
-    public void CloseShopFromUI()
-    {
-        _ui?.Close();
-    }
-
-    void OnDrawGizmosSelected()
-    {
-        Gizmos.color = new Color(0.2f, 0.9f, 1f, 0.6f);
-        Gizmos.DrawWireSphere(transform.position, interactRadius);
     }
 }
