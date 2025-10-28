@@ -8385,12 +8385,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f48c38af984e81a4f9fd6ddc55073b71, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlantingGrid
-  tilledSoil: {fileID: 868457377}
-  plantPrefab: {fileID: 3434414323537609140, guid: 1d0fda7723fe3554c8b9411e649a7350, type: 3}
-  seedDatabase: {fileID: 11400000, guid: 185687f90403d5a45a8ddfc30ebb5a15, type: 2}
   wizard: {fileID: 0}
   worldCamera: {fileID: 0}
+  tilledSoil: {fileID: 868457377}
+  plantPrefab: {fileID: 3434414323537609140, guid: 1d0fda7723fe3554c8b9411e649a7350, type: 3}
+  seedDatabase: {fileID: 11400000, guid: 8e0fff3de21d8a64887366dfdeaf4ce6, type: 2}
   plantKey: 19
+  playerTag: Player
+  autoBindWizard: 1
+  autoBindCamera: 1
 --- !u!4 &1369296311
 Transform:
   m_ObjectHideFlags: 0

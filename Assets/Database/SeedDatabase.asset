@@ -9,8 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab0290ccf67e6d44f82cd23d800de97b, type: 3}
-  m_Name: TownShop
-  m_EditorClassIdentifier: Assembly-CSharp::ShopCatalog
+  m_Script: {fileID: 11500000, guid: 55a1b60b1e1eae143a7033959ce12fda, type: 3}
+  m_Name: SeedDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::SeedDatabase
   seeds:
-  - {fileID: 11400000, guid: ad9f99bce6ef1df4097ae8b53f3a925e, type: 2}
+  - {fileID: 11400000, guid: a786c5bd1f37260419360419b09e4bd7, type: 2}

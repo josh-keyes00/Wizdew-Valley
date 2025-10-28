@@ -150,7 +150,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 47caa93013eb9084684452b3da8076f2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Plant
-  spriteRenderer: {fileID: 0}
+  spriteRenderer: {fileID: 8604292073804389877}
   stageSprites:
   - {fileID: 6713695681088423052, guid: b590b1161d7050a45a9214331fae1449, type: 3}
   - {fileID: 8599845125756789381, guid: b590b1161d7050a45a9214331fae1449, type: 3}

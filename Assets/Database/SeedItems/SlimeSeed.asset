@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SeedItem
   id: seed_slime
   displayName: Slime Seed
-  icon: {fileID: 0}
+  icon: {fileID: 4255850337334610926, guid: b590b1161d7050a45a9214331fae1449, type: 3}
   buyPrice: 10
   sellPrice: 15
   requiredEnemyId: Slime

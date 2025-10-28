@@ -1,53 +1,83 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Plant : MonoBehaviour
 {
     [Header("Visuals")]
     public SpriteRenderer spriteRenderer;
-    public Sprite[] stageSprites; // optional: size == seed.stages (can be empty)
+    public Sprite[] stageSprites;
 
     private SeedItem _seed;
     private Vector3Int _cell;
     private PlantingGrid _grid;
 
-    private int _stage = 0;          // 0..(stages-1)
-    private int _baselineKills = 0;  // kills at the moment of planting
+    private int _stage = 0;
+    private int _baselineKills = 0;
+    private string _sceneName;
+    private string _requiredKey; // normalized enemy id
 
-    public bool IsMature => _stage >= (_seed ? _seed.stages : 1) - 1;
+    public int CurrentStage => _stage;
+    public bool IsMature => _seed && _stage >= (_seed.stages - 1);
 
+    // New planting
     public void Init(SeedItem seed, Vector3Int cell, PlantingGrid grid)
     {
+        _sceneName = SceneManager.GetActiveScene().name;
         _seed = seed; _cell = cell; _grid = grid;
+        _requiredKey = KillCounter.Normalize(_seed.requiredEnemyId);
 
-        // subscribe to global kills
-        KillCounter.Instance.OnKill += HandleKill;
+        if (KillCounter.Instance != null)
+        {
+            KillCounter.Instance.OnKill += HandleKill;
+            _baselineKills = KillCounter.Instance.GetTotal(_requiredKey);
+        }
 
-        // baseline when planted
-        _baselineKills = KillCounter.Instance.GetTotal(_seed.requiredEnemyId);
-
+        _stage = 0;
         UpdateVisual();
+        PlantSave.Instance?.Upsert(_sceneName, _seed.id, _cell, _stage);
     }
 
-    void OnDestroy()
+    // Restore from save (NO Upsert here!)
+    public void InitFromSave(SeedItem seed, Vector3Int cell, PlantingGrid grid, int savedStage)
+    {
+        _sceneName = SceneManager.GetActiveScene().name;
+        _seed = seed; _cell = cell; _grid = grid;
+        _requiredKey = KillCounter.Normalize(_seed.requiredEnemyId);
+
+        if (KillCounter.Instance != null)
+        {
+            KillCounter.Instance.OnKill += HandleKill;
+            int totalNow = KillCounter.Instance.GetTotal(_requiredKey);
+            _stage = Mathf.Clamp(savedStage, 0, _seed.stages - 1);
+            // Rebuild a baseline so further kills advance naturally
+            _baselineKills = Mathf.Max(0, totalNow - (_stage * _seed.killsPerStage));
+        }
+
+        UpdateVisual();
+        // DO NOT Upsert here (we're restoring from an existing record).
+    }
+
+    private void OnDestroy()
     {
         if (KillCounter.Instance != null)
             KillCounter.Instance.OnKill -= HandleKill;
     }
 
-    void HandleKill(string enemyId, int totalNow)
+    private void HandleKill(string enemyKey, int totalNow)
     {
-        if (_seed == null || enemyId != _seed.requiredEnemyId) return;
+        if (enemyKey != _requiredKey || _seed == null) return;
 
-        int gainedSincePlant = totalNow - _baselineKills;
-        int newStage = Mathf.Clamp(gainedSincePlant / _seed.killsPerStage, 0, _seed.stages - 1);
+        int gained = totalNow - _baselineKills;
+        int newStage = Mathf.Clamp(gained / _seed.killsPerStage, 0, _seed.stages - 1);
         if (newStage != _stage)
         {
             _stage = newStage;
             UpdateVisual();
+            PlantSave.Instance?.Upsert(_sceneName, _seed.id, _cell, _stage);
         }
     }
 
-    void UpdateVisual()
+    private void UpdateVisual()
     {
         if (spriteRenderer && stageSprites != null && stageSprites.Length > 0)
         {
@@ -56,11 +86,7 @@ public class Plant : MonoBehaviour
         }
     }
 
-    // Simple harvest: call via trigger/key or OnMouseDown for now
-    private void OnMouseDown()
-    {
-        TryHarvest();
-    }
+    private void OnMouseDown() { TryHarvest(); }
 
     public bool TryHarvest()
     {
@@ -71,8 +97,8 @@ public class Plant : MonoBehaviour
 
         player.TryAddItem(_seed.harvestItemId, _seed.harvestYield);
 
-        // free cell and destroy plant
         _grid?.FreeCell(_cell);
+        PlantSave.Instance?.Remove(_sceneName, _cell);
         Destroy(gameObject);
         return true;
     }

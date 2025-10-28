@@ -808,7 +808,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: -36.82141, y: -56.87882}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4828330853113190210
@@ -907,12 +907,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4f15f7aa907b1148babaeab3f1cb0e6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShopItemRowUI
-  icon: {fileID: 2041664580584244782}
+  iconImage: {fileID: 2041664580584244782}
   nameText: {fileID: 4694172688183389354}
-  priceBuyText: {fileID: 9174868267014607838}
-  priceSellText: {fileID: 9174868267014607838}
-  buy1Button: {fileID: 6825339019889153752}
-  sellAllButton: {fileID: 7844963641406510469}
+  buyPriceText: {fileID: 9174868267014607838}
+  sellPriceText: {fileID: 1054114933075778526}
+  buyButton: {fileID: 6825339019889153752}
+  sellButton: {fileID: 7844963641406510469}
 --- !u!1 &9144916450986293418
 GameObject:
   m_ObjectHideFlags: 0

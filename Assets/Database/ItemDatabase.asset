@@ -22,3 +22,7 @@ MonoBehaviour:
     icon: {fileID: 269761231046535880, guid: b590b1161d7050a45a9214331fae1449, type: 3}
   - id: stone
     icon: {fileID: 5554988646109930501, guid: b590b1161d7050a45a9214331fae1449, type: 3}
+  - id: seed_slime
+    icon: {fileID: 4255850337334610926, guid: b590b1161d7050a45a9214331fae1449, type: 3}
+  - id: produce_slime
+    icon: {fileID: 8599845125756789381, guid: b590b1161d7050a45a9214331fae1449, type: 3}

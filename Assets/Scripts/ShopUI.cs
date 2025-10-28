@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ShopUI : MonoBehaviour
 {
@@ -7,11 +8,14 @@ public class ShopUI : MonoBehaviour
     public ShopItemRowUI rowPrefab;       // row prefab with ShopItemRowUI on root
     public GameObject rootPanel;          // panel we show/hide
 
+    [Header("HUD")]
+    public Text coinText;                 // optional coin display
+
     private ShopCatalog _catalog;
     private Shopkeeper _owner;
     private WizardController _player;
 
-    public bool IsOpen => rootPanel != null && rootPanel.activeSelf;
+    public bool IsOpen => rootPanel && rootPanel.activeSelf;
 
     public void Open(Shopkeeper owner, ShopCatalog catalog)
     {
@@ -24,7 +28,7 @@ public class ShopUI : MonoBehaviour
             if (p) _player = p.GetComponent<WizardController>();
         }
 
-        BuildRows();
+        Refresh();
         if (rootPanel) rootPanel.SetActive(true);
     }
 
@@ -33,19 +37,62 @@ public class ShopUI : MonoBehaviour
         if (rootPanel) rootPanel.SetActive(false);
     }
 
+    public void Refresh()
+    {
+        BuildRows();
+        UpdateCoinText();
+    }
+
+    private void UpdateCoinText()
+    {
+        if (coinText && _owner != null)
+            coinText.text = _owner.GetPlayerCoinCount().ToString();
+    }
+
     private void BuildRows()
     {
-        // clear
-        for (int i = rowsParent.childCount - 1; i >= 0; i--)
-            Destroy(rowsParent.GetChild(i).gameObject);
-
-        if (_catalog == null || _player == null || rowPrefab == null || rowsParent == null) return;
-
-        foreach (var seed in _catalog.seeds)
+        if (rowsParent)
         {
-            if (!seed) continue;
-            var row = Instantiate(rowPrefab, rowsParent);
-            row.Setup(seed, _player, this);
+            for (int i = rowsParent.childCount - 1; i >= 0; i--)
+                Destroy(rowsParent.GetChild(i).gameObject);
         }
+
+        if (_catalog == null || _owner == null || rowPrefab == null || rowsParent == null) return;
+
+        foreach (var entry in _catalog.items)
+        {
+            if (entry == null || string.IsNullOrEmpty(entry.itemId)) continue;
+
+            var row = Instantiate(rowPrefab, rowsParent);
+            var icon = _owner.GetIcon(entry.itemId);
+            string display = string.IsNullOrEmpty(entry.displayName) ? entry.itemId : entry.displayName;
+
+            row.Setup(
+                itemId: entry.itemId,
+                displayName: display,
+                icon: icon,
+                buyPrice: entry.buyPrice,
+                sellPrice: entry.sellPrice,
+                owner: _owner,
+                ui: this
+            );
+        }
+    }
+
+    // called by row
+    public void RequestBuyOne(string itemId)
+    {
+        if (_owner != null && _owner.TryBuyOne(itemId))
+            Refresh();
+        else
+            UpdateCoinText();
+    }
+
+    public void RequestSellOne(string itemId)
+    {
+        if (_owner != null && _owner.TrySellOne(itemId))
+            Refresh();
+        else
+            UpdateCoinText();
     }
 }

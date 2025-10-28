@@ -4,42 +4,59 @@ using UnityEngine.UI;
 public class ShopItemRowUI : MonoBehaviour
 {
     [Header("UI")]
-    public Image icon;
+    public Image iconImage;
     public Text nameText;
-    public Text priceBuyText;
-    public Text priceSellText;
-    public Button buy1Button;
-    public Button sellAllButton;
+    public Text buyPriceText;
+    public Text sellPriceText;
+    public Button buyButton;
+    public Button sellButton;
 
-    private SeedItem _seed;
-    private WizardController _player;
-    private ShopUI _shop;
+    // runtime
+    private string _itemId;
+    private int _buyPrice;
+    private int _sellPrice;
+    private Shopkeeper _owner;
+    private ShopUI _ui;
 
-    public void Setup(SeedItem seed, WizardController player, ShopUI shop)
+    public void Setup(string itemId, string displayName, Sprite icon,
+                      int buyPrice, int sellPrice,
+                      Shopkeeper owner, ShopUI ui)
     {
-        _seed = seed; _player = player; _shop = shop;
+        _itemId = itemId;
+        _buyPrice = buyPrice;
+        _sellPrice = sellPrice;
+        _owner = owner;
+        _ui = ui;
 
-        if (icon) icon.sprite = seed.icon;
-        if (nameText) nameText.text = seed.displayName;
-        if (priceBuyText) priceBuyText.text = $"Buy: {seed.buyPrice}";
-        if (priceSellText) priceSellText.text = $"Sell: {seed.sellPrice}";
+        if (iconImage) iconImage.sprite = icon;
+        if (nameText) nameText.text = displayName;
+        if (buyPriceText) buyPriceText.text = buyPrice.ToString();
+        if (sellPriceText) sellPriceText.text = sellPrice.ToString();
 
-        buy1Button.onClick.AddListener(() =>
+        // Wire buttons
+        if (buyButton)
         {
-            if (Currency.Instance != null && Currency.Instance.Spend(seed.buyPrice))
-            {
-                _player.TryAddItem(seed.id, 1);
-            }
-        });
-
-        sellAllButton.onClick.AddListener(() =>
+            buyButton.onClick.RemoveAllListeners();
+            buyButton.onClick.AddListener(() => _ui.RequestBuyOne(_itemId));
+        }
+        if (sellButton)
         {
-            int have = _player.GetTotalCount(seed.harvestItemId);
-            if (have > 0)
-            {
-                _player.RemoveItem(seed.harvestItemId, have);
-                Currency.Instance?.Add(have * seed.sellPrice);
-            }
-        });
+            sellButton.onClick.RemoveAllListeners();
+            sellButton.onClick.AddListener(() => _ui.RequestSellOne(_itemId));
+        }
+
+        // Initial interactivity based on coins/items
+        UpdateInteractivity();
+    }
+
+    private void UpdateInteractivity()
+    {
+        if (_owner == null) return;
+
+        bool canBuy = _owner.GetPlayerCoinCount() >= _buyPrice;
+        bool canSell = _owner.GetPlayerItemCount(_itemId) > 0 && _itemId != _owner.CoinId;
+
+        if (buyButton) buyButton.interactable = canBuy;
+        if (sellButton) sellButton.interactable = canSell;
     }
 }

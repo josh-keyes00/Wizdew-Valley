@@ -24,7 +24,7 @@ public class Slime : MonoBehaviour
 
     [Header("Obstacles")]
     [SerializeField] private float obstacleCheckDistance = 0.6f;
-    [SerializeField] private LayerMask obstacleMask = ~0; // set to your Walls physics layer
+    [SerializeField] private LayerMask obstacleMask = ~0; // set to your Walls layer
 
     [Header("Contact Damage")]
     [SerializeField] private float contactDamage = 1f;
@@ -45,6 +45,11 @@ public class Slime : MonoBehaviour
     [SerializeField, Tooltip("Brief i-frames after taking damage (seconds)")]
     private float hitInvulnerability = 0.05f;
     public UnityEvent onDeath; // optional hook for VFX/SFX/loot
+
+    // ---------- KILL COUNTER ----------
+    [Header("Kill Counter")]
+    [SerializeField, Tooltip("String id reported to KillCounter on death (must match SeedItem.requiredEnemyId).")]
+    private string killCounterId = "Slime";
 
     private float _hp;
     private float _lastDamageTime = -999f;
@@ -81,6 +86,13 @@ public class Slime : MonoBehaviour
 
     void Update()
     {
+        // re-acquire player if it vanished / scene swapped
+        if (player == null)
+        {
+            var p = GameObject.FindGameObjectWithTag(playerTag);
+            if (p) player = p.transform;
+        }
+
         UpdateAggro();
 
         // Active hop window
@@ -88,19 +100,24 @@ public class Slime : MonoBehaviour
         {
             hopTimeLeft -= Time.deltaTime;
             float spd = isChasing ? chaseHopSpeed : idleHopSpeed;
-            rb.linearVelocity = moveDir * spd; // FIX
+            rb.linearVelocity = moveDir * spd;
 
             if (faceDirection && moveDir.sqrMagnitude > 1e-4f)
             {
                 var s = transform.localScale;
-                if (Mathf.Abs(moveDir.x) > 0.01f) s.x = Mathf.Sign(moveDir.x) * Mathf.Abs(s.x);
-                transform.localScale = s;
+                if (Mathf.Abs(moveDir.x) > 0.01f)
+                {
+                    float sign = Mathf.Sign(moveDir.x);
+                    s.x = Mathf.Abs(s.x) * sign;
+                    transform.localScale = s;
+                }
             }
 
             if (hopTimeLeft <= 0f)
             {
-                rb.linearVelocity = Vector2.zero; // FIX
-                ScheduleNextHop(!isChasing);
+                rb.linearVelocity = Vector2.zero;
+                // schedule next wait interval based on current chase state
+                ScheduleNextHop(!isChasing); // idle=true when not chasing
             }
 
             ClampSpeed();
@@ -160,7 +177,7 @@ public class Slime : MonoBehaviour
 
     void ClampSpeed()
     {
-        rb.linearVelocity = Vector2.ClampMagnitude(rb.linearVelocity, maxSpeed); // FIX
+        rb.linearVelocity = Vector2.ClampMagnitude(rb.linearVelocity, maxSpeed);
     }
 
     void Reset()
@@ -210,7 +227,7 @@ public class Slime : MonoBehaviour
         }
         else
         {
-            // (optional) brief feedback hook (flash, sound) can go here
+            // TODO: flash/sound feedback if desired
         }
     }
 
@@ -223,8 +240,24 @@ public class Slime : MonoBehaviour
     private void Die()
     {
         onDeath?.Invoke();
-        KillCounter.Instance?.RegisterKill("Slime");
+
+        // credit kill to KillCounter (drives seed growth)
+        if (!string.IsNullOrEmpty(killCounterId))
+            KillCounter.Instance?.RegisterKill(killCounterId);
+
         Destroy(gameObject);
+    }
+
+    void OnValidate()
+    {
+        if (deAggroRadius < aggroRadius) deAggroRadius = aggroRadius + 0.01f;
+        if (maxHealth < 1f) maxHealth = 1f;
+        if (hitInvulnerability < 0f) hitInvulnerability = 0f;
+        if (hopDuration < 0.01f) hopDuration = 0.01f;
+        if (idleHopInterval.x < 0.05f) idleHopInterval.x = 0.05f;
+        if (idleHopInterval.y < idleHopInterval.x) idleHopInterval.y = idleHopInterval.x;
+        if (chaseHopInterval.x < 0.05f) chaseHopInterval.x = 0.05f;
+        if (chaseHopInterval.y < chaseHopInterval.x) chaseHopInterval.y = chaseHopInterval.x;
     }
 
     void OnDrawGizmosSelected()

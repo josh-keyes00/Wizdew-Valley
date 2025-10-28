@@ -118,6 +118,7 @@ MonoBehaviour:
   rowsParent: {fileID: 6446150441003529630}
   rowPrefab: {fileID: 1369340222430012821, guid: 8583a45995330384e927d9d28868dfba, type: 3}
   rootPanel: {fileID: 5292319881923516234}
+  coinText: {fileID: 0}
 --- !u!1 &7898447652671008553
 GameObject:
   m_ObjectHideFlags: 0

@@ -4,15 +4,19 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Wizdew/Seeds/Seed Database", fileName = "SeedDatabase")]
 public class SeedDatabase : ScriptableObject
 {
-    public List<SeedItem> items = new List<SeedItem>();
+    public List<SeedItem> seeds = new List<SeedItem>();
+
     private Dictionary<string, SeedItem> _map;
 
     private void OnEnable()
     {
         _map = new Dictionary<string, SeedItem>();
-        foreach (var s in items)
-            if (s && !string.IsNullOrEmpty(s.id) && !_map.ContainsKey(s.id))
-                _map[s.id] = s;
+        foreach (var s in seeds)
+        {
+            if (!s) continue;
+            if (string.IsNullOrEmpty(s.id)) continue;
+            if (!_map.ContainsKey(s.id)) _map[s.id] = s;
+        }
     }
 
     public bool TryGetById(string id, out SeedItem seed)
