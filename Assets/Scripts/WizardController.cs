@@ -75,7 +75,7 @@ public class WizardController : MonoBehaviour
     [SerializeField] private UnityEditor.SceneAsset deathSceneAsset;
 #endif
 
-    // -------------------- Hit / Knockback (ADDED) --------------------
+    // -------------------- Hit / Knockback --------------------
     [Header("Hit / Knockback")]
     [SerializeField, Tooltip("How quickly knockback decays (units/sec). Higher = shorter shove.")]
     private float knockbackFriction = 18f;
@@ -112,23 +112,115 @@ public class WizardController : MonoBehaviour
         (hotbar != null && selectedHotbarIndex >= 0 && selectedHotbarIndex < hotbar.Length)
             ? hotbar[selectedHotbarIndex] : null;
 
+    // ---- Hotbar read-only accessors ----
+    public int HotbarCount => hotbar != null ? hotbar.Length : 0;
 
+    public bool TryGetHotbarSlot(int index, out string itemId, out int amount)
+    {
+        itemId = null; amount = 0;
+        if (hotbar == null || index < 0 || index >= hotbar.Length) return false;
+        var s = hotbar[index];
+        if (s == null || s.IsEmpty) return true; // empty slot: null + 0
+        itemId = s.itemId;
+        amount = s.amount;
+        return true;
+    }
 
+    // -------------------- Inventory Events & Slot API (NEW) --------------------
+    [Header("Inventory Events")]
+    public UnityEvent onInventoryChanged;
 
+    public enum SlotContainer { Hotbar, Backpack }
 
-// ---- Hotbar read-only accessors (ADD THESE) ----
-public int HotbarCount => hotbar != null ? hotbar.Length : 0;
+    public int BackpackCount => backpack != null ? backpack.Length : 0;
 
-public bool TryGetHotbarSlot(int index, out string itemId, out int amount)
-{
-    itemId = null; amount = 0;
-    if (hotbar == null || index < 0 || index >= hotbar.Length) return false;
-    var s = hotbar[index];
-    if (s == null || s.IsEmpty) return true; // empty slot: null + 0
-    itemId = s.itemId;
-    amount = s.amount;
-    return true;
-}
+    public bool TryGetBackpackSlot(int index, out string itemId, out int amount)
+    {
+        itemId = null; amount = 0;
+        if (backpack == null || index < 0 || index >= backpack.Length) return false;
+        var s = backpack[index];
+        if (s == null || s.IsEmpty) return true;
+        itemId = s.itemId; amount = s.amount;
+        return true;
+    }
+
+    public bool TryGetSlot(SlotContainer c, int index, out string itemId, out int amount)
+    {
+        if (c == SlotContainer.Hotbar) return TryGetHotbarSlot(index, out itemId, out amount);
+        return TryGetBackpackSlot(index, out itemId, out amount);
+    }
+
+    public bool SetSlot(SlotContainer c, int index, string itemId, int amount)
+    {
+        EnsureInventoryArrays();
+        var arr = (c == SlotContainer.Hotbar) ? hotbar : backpack;
+        if (arr == null || index < 0 || index >= arr.Length) return false;
+
+        var s = arr[index];
+        if (string.IsNullOrEmpty(itemId) || amount <= 0)
+        {
+            s.Clear();
+        }
+        else
+        {
+            s.itemId = itemId;
+            s.amount = Mathf.Clamp(amount, 1, maxStackSize);
+        }
+
+        onInventoryChanged?.Invoke();
+        return true;
+    }
+
+    private ItemStack[] GetArray(SlotContainer c) => (c == SlotContainer.Hotbar) ? hotbar : backpack;
+
+    /// <summary>
+    /// Move as many as possible from A→B. If same item, merges up to maxStackSize; if different, swaps; if B empty, moves whole stack.
+    /// </summary>
+    public bool MoveOrMerge(SlotContainer fromC, int fromIdx, SlotContainer toC, int toIdx)
+    {
+        EnsureInventoryArrays();
+        if (fromC == toC && fromIdx == toIdx) return false;
+
+        var fromArr = GetArray(fromC);
+        var toArr   = GetArray(toC);
+        if (fromArr == null || toArr == null) return false;
+        if (fromIdx < 0 || fromIdx >= fromArr.Length) return false;
+        if (toIdx   < 0 || toIdx   >= toArr.Length) return false;
+
+        var A = fromArr[fromIdx];
+        var B = toArr[toIdx];
+        if (A == null || A.IsEmpty) return false;
+        if (B == null) { toArr[toIdx] = new ItemStack(); B = toArr[toIdx]; }
+
+        // Empty destination: move whole stack
+        if (B.IsEmpty)
+        {
+            B.itemId = A.itemId;
+            B.amount = A.amount;
+            A.Clear();
+            onInventoryChanged?.Invoke();
+            return true;
+        }
+
+        // Same item: merge up to max
+        if (B.itemId == A.itemId)
+        {
+            int space = maxStackSize - B.amount;
+            if (space <= 0) return false;
+            int moved = Mathf.Min(space, A.amount);
+            B.amount += moved;
+            A.amount -= moved;
+            if (A.amount <= 0) A.Clear();
+            onInventoryChanged?.Invoke();
+            return moved > 0;
+        }
+
+        // Different item: swap
+        (A.itemId, B.itemId) = (B.itemId, A.itemId);
+        (A.amount, B.amount) = (B.amount, A.amount);
+        onInventoryChanged?.Invoke();
+        return true;
+    }
 
     // -------------------- LIFECYCLE --------------------
     private void Awake()
@@ -338,7 +430,7 @@ public bool TryGetHotbarSlot(int index, out string itemId, out int amount)
         }
     }
 
-    // -------------------- KNOCKBACK HOOK (ADDED) --------------------
+    // -------------------- KNOCKBACK HOOK --------------------
     // Called by Slime via SendMessage("ApplyKnockback", impulse)
     public void ApplyKnockback(Vector2 impulse)
     {
@@ -390,6 +482,8 @@ public bool TryGetHotbarSlot(int index, out string itemId, out int amount)
         remaining = FillEmptySlots(hotbar, itemId, remaining);
         remaining = FillEmptySlots(backpack, itemId, remaining);
 
+        int added = amount - remaining;
+        if (added > 0) onInventoryChanged?.Invoke();
         return remaining == 0;
     }
 
@@ -405,7 +499,9 @@ public bool TryGetHotbarSlot(int index, out string itemId, out int amount)
         toRemove = RemoveFromArray(hotbar, itemId, toRemove);
         toRemove = RemoveFromArray(backpack, itemId, toRemove);
 
-        return amount - toRemove;
+        int removed = amount - toRemove;
+        if (removed > 0) onInventoryChanged?.Invoke();
+        return removed;
     }
 
     /// <summary>Total count of itemId across hotbar + backpack.</summary>
@@ -421,8 +517,16 @@ public bool TryGetHotbarSlot(int index, out string itemId, out int amount)
     public void SelectHotbarIndex(int index)
     {
         EnsureInventoryArrays();
-        selectedHotbarIndex = Mathf.Clamp(index, 0, hotbar.Length - 1);
-        // Hook this to UI highlight if you have one.
+        int clamped = Mathf.Clamp(index, 0, hotbar.Length - 1);
+        if (clamped != selectedHotbarIndex)
+        {
+            selectedHotbarIndex = clamped;
+            onInventoryChanged?.Invoke(); // so UI can update selection highlight instantly
+        }
+        else
+        {
+            selectedHotbarIndex = clamped;
+        }
     }
 
     /// <summary>Use one item from the selected hotbar slot (placeholder).</summary>
@@ -432,10 +536,10 @@ public bool TryGetHotbarSlot(int index, out string itemId, out int amount)
         var stack = hotbar[selectedHotbarIndex];
         if (stack.IsEmpty) return false;
 
-        // TODO: trigger your actual item use here (cast spell, consume potion, place tile, etc.)
-        // For now we just consume one.
+        // TODO: your actual item use (cast spell, consume, place tile, etc.)
         stack.amount -= 1;
         if (stack.amount <= 0) stack.Clear();
+        onInventoryChanged?.Invoke();
         return true;
     }
 
@@ -443,6 +547,7 @@ public bool TryGetHotbarSlot(int index, out string itemId, out int amount)
     {
         if (a < 0 || b < 0 || a >= hotbar.Length || b >= hotbar.Length) return false;
         (hotbar[a], hotbar[b]) = (hotbar[b], hotbar[a]);
+        onInventoryChanged?.Invoke();
         return true;
     }
 
@@ -518,6 +623,15 @@ public bool TryGetHotbarSlot(int index, out string itemId, out int amount)
         // sync picked scene asset to the string name (Editor only)
         if (deathSceneAsset != null)
             deathSceneName = deathSceneAsset.name;
+    }
+
+    [ContextMenu("DEBUG: Give starter items")]
+    private void DebugGiveStarterItems()
+    {
+        TryAddItem("potion", 5);
+        TryAddItem("coin", 120);
+        TryAddItem("wood", 64);
+        TryAddItem("stone", 64);
     }
 #endif
 }
