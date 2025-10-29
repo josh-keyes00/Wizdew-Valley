@@ -3251,20 +3251,24 @@ PrefabInstance:
       value: 1080
       objectReference: {fileID: 0}
     - target: {fileID: 3604843730652453499, guid: 87bd759258607b04095dbbfa6ce2cce5, type: 3}
+      propertyPath: orthographic size
+      value: 8.4375
+      objectReference: {fileID: 0}
+    - target: {fileID: 3604843730652453499, guid: 87bd759258607b04095dbbfa6ce2cce5, type: 3}
       propertyPath: m_NormalizedViewPortRect.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3604843730652453499, guid: 87bd759258607b04095dbbfa6ce2cce5, type: 3}
       propertyPath: m_NormalizedViewPortRect.y
-      value: 0.12383613
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3604843730652453499, guid: 87bd759258607b04095dbbfa6ce2cce5, type: 3}
       propertyPath: m_NormalizedViewPortRect.width
-      value: 0.31651828
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3604843730652453499, guid: 87bd759258607b04095dbbfa6ce2cce5, type: 3}
       propertyPath: m_NormalizedViewPortRect.height
-      value: 0.19863439
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4903029701484070001, guid: 87bd759258607b04095dbbfa6ce2cce5, type: 3}
       propertyPath: m_LocalPosition.x
@@ -4235,7 +4239,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 0
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
